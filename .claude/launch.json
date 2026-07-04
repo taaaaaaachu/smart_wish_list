@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "wrangler-dev",
+      "runtimeExecutable": "C:\\Users\\you\\AppData\\Local\\mise\\shims\\npm.exe",
+      "runtimeArgs": ["run", "dev"],
+      "port": 8787
+    }
+  ]
+}
