@@ -125,21 +125,9 @@ a {
   gap: 4px;
 }
 
-.criteria summary {
-  cursor: pointer;
+.field-label {
   font-size: 0.9rem;
   color: var(--color-muted);
-}
-
-.criteria-list {
-  margin: 8px 0 0;
-  padding-left: 20px;
-  font-size: 0.8rem;
-  color: var(--color-muted);
-}
-
-.criteria-list li {
-  margin-bottom: 2px;
 }
 
 .slider-row {
@@ -156,6 +144,16 @@ a {
   min-width: 2ch;
   text-align: right;
   font-weight: 600;
+}
+
+.criteria-current {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--color-muted);
+  background: #f3f4f6;
+  border-radius: var(--radius);
+  padding: 6px 10px;
+  min-height: 1.2em;
 }
 
 button {

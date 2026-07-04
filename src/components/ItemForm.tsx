@@ -2,6 +2,7 @@ import type { FC } from "hono/jsx";
 import {
   USAGE_FREQ_CRITERIA,
   WANT_LEVEL_CRITERIA,
+  findCriterion,
   type RatingCriterion,
 } from "../lib/ratingCriteria";
 
@@ -13,41 +14,55 @@ export type ItemFormValues = {
   usageFreq?: string;
 };
 
-const CriteriaDetails: FC<{ summary: string; items: RatingCriterion[] }> = ({
-  summary,
-  items,
-}) => (
-  <details class="criteria">
-    <summary>{summary}</summary>
-    <ul class="criteria-list">
-      {items.map((item) => (
-        <li>
-          <strong>{item.level}</strong> = {item.description}
-        </li>
-      ))}
-    </ul>
-  </details>
-);
+// スライダー操作時に隣の数値表示と現在値の凡例テキストを更新する。
+// ビルドステップを持たないため、フォーム内にインラインで1度だけ定義する。
+const updateCriteriaScript = `
+function wishlistUpdateCriteria(input) {
+  var criteria = JSON.parse(input.dataset.criteria);
+  var value = Number(input.value);
+  var match = criteria.find(function (c) {
+    if (c.level.indexOf('〜') !== -1) {
+      var parts = c.level.split('〜').map(Number);
+      return value >= parts[0] && value <= parts[1];
+    }
+    return Number(c.level) === value;
+  });
+  var output = input.nextElementSibling;
+  if (output) output.value = input.value;
+  var desc = input.closest('.field').querySelector('.criteria-current');
+  if (desc && match) desc.textContent = match.level + ' = ' + match.description;
+}
+`;
 
-const RangeField: FC<{ name: string; value?: string }> = ({
-  name,
-  value,
-}) => {
+const RangeField: FC<{
+  name: string;
+  value?: string;
+  criteria: RatingCriterion[];
+}> = ({ name, value, criteria }) => {
   const current = value ?? "5";
+  const currentCriterion = findCriterion(criteria, Number(current));
   return (
-    <div class="slider-row">
-      <input
-        type="range"
-        name={name}
-        min="1"
-        max="10"
-        step="1"
-        required
-        value={current}
-        oninput="this.nextElementSibling.value = this.value"
-      />
-      <output>{current}</output>
-    </div>
+    <>
+      <div class="slider-row">
+        <input
+          type="range"
+          name={name}
+          min="1"
+          max="10"
+          step="1"
+          required
+          value={current}
+          data-criteria={JSON.stringify(criteria)}
+          oninput="wishlistUpdateCriteria(this)"
+        />
+        <output>{current}</output>
+      </div>
+      <p class="criteria-current">
+        {currentCriterion
+          ? `${currentCriterion.level} = ${currentCriterion.description}`
+          : ""}
+      </p>
+    </>
   );
 };
 
@@ -79,13 +94,14 @@ export const ItemForm: FC<{
       />
     </label>
     <div class="field">
-      <CriteriaDetails summary="欲しい度(1〜10)" items={WANT_LEVEL_CRITERIA} />
-      <RangeField name="wantLevel" value={values?.wantLevel} />
+      <span class="field-label">欲しい度(1〜10)</span>
+      <RangeField name="wantLevel" value={values?.wantLevel} criteria={WANT_LEVEL_CRITERIA} />
     </div>
     <div class="field">
-      <CriteriaDetails summary="使用頻度(1〜10)" items={USAGE_FREQ_CRITERIA} />
-      <RangeField name="usageFreq" value={values?.usageFreq} />
+      <span class="field-label">使用頻度(1〜10)</span>
+      <RangeField name="usageFreq" value={values?.usageFreq} criteria={USAGE_FREQ_CRITERIA} />
     </div>
     <button type="submit">{submitLabel}</button>
+    <script dangerouslySetInnerHTML={{ __html: updateCriteriaScript }} />
   </form>
 );

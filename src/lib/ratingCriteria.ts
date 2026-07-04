@@ -16,8 +16,26 @@ export const WANT_LEVEL_CRITERIA: RatingCriterion[] = [
 export const USAGE_FREQ_CRITERIA: RatingCriterion[] = [
   { level: "1", description: "一度だけ(結婚式のアイテムなど)" },
   { level: "2〜3", description: "年に数回使用" },
+  { level: "4", description: "2ヶ月に1回程度使用" },
   { level: "5", description: "月1回使用" },
+  { level: "6", description: "2週間に1回程度使用" },
   { level: "7", description: "週1回使用" },
+  { level: "8", description: "週2〜3回使用" },
   { level: "9", description: "毎日使用" },
   { level: "10", description: "毎日複数回使用" },
 ];
+
+function levelMatches(level: string, value: number): boolean {
+  if (level.includes("〜")) {
+    const [lo, hi] = level.split("〜").map(Number);
+    return value >= lo && value <= hi;
+  }
+  return Number(level) === value;
+}
+
+export function findCriterion(
+  items: RatingCriterion[],
+  value: number,
+): RatingCriterion | undefined {
+  return items.find((item) => levelMatches(item.level, value));
+}
