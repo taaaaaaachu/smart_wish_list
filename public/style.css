@@ -99,6 +99,10 @@ a {
   max-width: 420px;
 }
 
+.budget-form {
+  margin-top: 16px;
+}
+
 .item-form label,
 .budget-form label {
   display: flex;
