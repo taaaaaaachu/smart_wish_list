@@ -15,6 +15,12 @@
       "migrations_dir": "./migrations"
     }
   ],
+  "routes": [
+    {
+      "pattern": "wish-list.example.com",
+      "custom_domain": true
+    }
+  ],
   "observability": {
     "enabled": true
   }
