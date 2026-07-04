@@ -40,9 +40,13 @@ npm run deploy               # wrangler deploy
   [API Tokens](https://dash.cloudflare.com/profile/api-tokens)から
   「Edit Cloudflare Workers」テンプレートで発行したトークン
   (D1マイグレーションも実行するため、対象アカウントのD1編集権限も含める)
-- `CLOUDFLARE_ACCOUNT_ID`: Cloudflareダッシュボード右側に表示されるAccount ID
 
-これらが未設定の場合、`deploy`ジョブは認証エラーで失敗する
+`CLOUDFLARE_ACCOUNT_ID`は設定していない。トークンがアクセスできる
+Cloudflareアカウントが1つだけであればwranglerが自動解決するため不要。
+複数アカウントを持つトークンを使う場合は`accountId`をwrangler-actionに
+明示的に渡す必要がある。
+
+これが未設定の場合、`deploy`ジョブは認証エラーで失敗する
 (`test`ジョブは無関係に動作する)。
 
 ## Cloudflare Accessによる保護
