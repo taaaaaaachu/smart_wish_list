@@ -114,6 +114,50 @@ a {
   border-radius: var(--radius);
 }
 
+.item-form input[type="range"] {
+  padding: 0;
+  border: none;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.criteria summary {
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: var(--color-muted);
+}
+
+.criteria-list {
+  margin: 8px 0 0;
+  padding-left: 20px;
+  font-size: 0.8rem;
+  color: var(--color-muted);
+}
+
+.criteria-list li {
+  margin-bottom: 2px;
+}
+
+.slider-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.slider-row input[type="range"] {
+  flex: 1;
+}
+
+.slider-row output {
+  min-width: 2ch;
+  text-align: right;
+  font-weight: 600;
+}
+
 button {
   font-size: 0.9rem;
   padding: 8px 14px;
@@ -184,6 +228,21 @@ button:hover {
 
 .item-actions button:hover {
   background: #4b5563;
+}
+
+.btn-link {
+  display: inline-block;
+  padding: 8px 14px;
+  border-radius: var(--radius);
+  background: var(--color-primary);
+  color: #fff;
+  text-decoration: none;
+  font-size: 0.9rem;
+  line-height: 1;
+}
+
+.btn-link:hover {
+  background: var(--color-primary-dark);
 }
 
 @media (min-width: 640px) {

@@ -51,7 +51,9 @@ export const ItemList: FC<{
               <td class="item-actions">
                 {variant === "unpurchased" ? (
                   <>
-                    <a href={`/items/${item.id}/edit`}>編集</a>
+                    <a href={`/items/${item.id}/edit`} class="btn-link">
+                      編集
+                    </a>
                     <form method="post" action={`/items/${item.id}/purchase`}>
                       <button type="submit">購入済みにする</button>
                     </form>
