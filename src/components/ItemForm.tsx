@@ -102,12 +102,14 @@ export const ItemForm: FC<{
       <span class="field-label">使用頻度(1〜10)</span>
       <RangeField name="usageFreq" value={values?.usageFreq} criteria={USAGE_FREQ_CRITERIA} />
     </div>
-    <button type="submit">{submitLabel}</button>
-    {showContinueAdd && (
-      <button type="submit" name="continueAdding" value="1">
-        連続追加(続けて次のアイテムを追加)
-      </button>
-    )}
+    <div class="form-actions">
+      <button type="submit">{submitLabel}</button>
+      {showContinueAdd && (
+        <button type="submit" name="continueAdding" value="1" class="btn-secondary">
+          連続追加
+        </button>
+      )}
+    </div>
     <script dangerouslySetInnerHTML={{ __html: updateCriteriaScript }} />
   </form>
 );
