@@ -1,8 +1,8 @@
 :root {
   --color-primary: #2563eb;
   --color-primary-dark: #1d4ed8;
-  --color-secondary: #737373;
-  --color-secondary-dark: #525252;
+  --color-secondary: #6b7280;
+  --color-secondary-dark: #4b5563;
   --color-text: #1f2937;
   --color-muted: #6b7280;
   --color-border: #e5e7eb;
@@ -181,7 +181,7 @@ button:hover {
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 16px;
+  gap: 8px;
 }
 
 .btn-secondary {
