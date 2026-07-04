@@ -73,13 +73,13 @@ budgetRoute.post("/budget", async (c) => {
         emptyMessage="この予算で買えるアイテムはありません。"
         variant="unpurchased"
       />
+      <BudgetForm value={budgetStr} submitLabel="再計算する" />
       <h2>選ばれなかったアイテム</h2>
       <ItemList
         items={notSelected}
         emptyMessage="すべての未購入アイテムが候補に選ばれました。"
         variant="unpurchased"
       />
-      <BudgetForm value={budgetStr} submitLabel="再計算する" />
     </Layout>,
   );
 });
