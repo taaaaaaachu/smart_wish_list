@@ -2,10 +2,11 @@ import type { FC } from "hono/jsx";
 import type { Item } from "../db";
 import { calcPriority } from "../lib/priority";
 
-export const ItemList: FC<{ items: Item[]; emptyMessage: string }> = ({
-  items,
-  emptyMessage,
-}) => {
+export const ItemList: FC<{
+  items: Item[];
+  emptyMessage: string;
+  variant: "unpurchased" | "purchased";
+}> = ({ items, emptyMessage, variant }) => {
   if (items.length === 0) {
     return <p>{emptyMessage}</p>;
   }
@@ -19,6 +20,7 @@ export const ItemList: FC<{ items: Item[]; emptyMessage: string }> = ({
           <th>欲しい度</th>
           <th>使用頻度</th>
           <th>優先度</th>
+          {variant === "purchased" && <th>購入日</th>}
           <th></th>
         </tr>
       </thead>
@@ -40,11 +42,23 @@ export const ItemList: FC<{ items: Item[]; emptyMessage: string }> = ({
             <td>
               {calcPriority(item.price, item.wantLevel, item.usageFreq).toFixed(1)}
             </td>
+            {variant === "purchased" && <td>{item.purchasedAt ?? "-"}</td>}
             <td class="item-actions">
-              <a href={`/items/${item.id}/edit`}>編集</a>
-              <form method="post" action={`/items/${item.id}/delete`}>
-                <button type="submit">削除</button>
-              </form>
+              {variant === "unpurchased" ? (
+                <>
+                  <a href={`/items/${item.id}/edit`}>編集</a>
+                  <form method="post" action={`/items/${item.id}/purchase`}>
+                    <button type="submit">購入済みにする</button>
+                  </form>
+                  <form method="post" action={`/items/${item.id}/delete`}>
+                    <button type="submit">削除</button>
+                  </form>
+                </>
+              ) : (
+                <form method="post" action={`/items/${item.id}/unpurchase`}>
+                  <button type="submit">購入を取り消す</button>
+                </form>
+              )}
             </td>
           </tr>
         ))}

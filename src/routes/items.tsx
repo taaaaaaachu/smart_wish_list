@@ -7,6 +7,7 @@ import {
   deleteItem,
   getItem,
   listItems,
+  setPurchased,
   updateItem,
   type Item,
 } from "../db";
@@ -31,6 +32,22 @@ itemsRoute.get("/", async (c) => {
       <ItemList
         items={items}
         emptyMessage="登録されているアイテムはありません。"
+        variant="unpurchased"
+      />
+    </Layout>,
+  );
+});
+
+itemsRoute.get("/purchased", async (c) => {
+  const items = await listItems(c.env.DB, true);
+  items.sort((a, b) => (b.purchasedAt ?? "").localeCompare(a.purchasedAt ?? ""));
+  return c.html(
+    <Layout title="購入済み一覧">
+      <h1>購入済みアイテム</h1>
+      <ItemList
+        items={items}
+        emptyMessage="購入済みのアイテムはありません。"
+        variant="purchased"
       />
     </Layout>,
   );
@@ -119,4 +136,22 @@ itemsRoute.post("/items/:id/delete", async (c) => {
   const id = Number(c.req.param("id"));
   await deleteItem(c.env.DB, id);
   return c.redirect("/");
+});
+
+itemsRoute.post("/items/:id/purchase", async (c) => {
+  const id = Number(c.req.param("id"));
+  const updated = await setPurchased(c.env.DB, id, true);
+  if (!updated) {
+    return c.notFound();
+  }
+  return c.redirect("/");
+});
+
+itemsRoute.post("/items/:id/unpurchase", async (c) => {
+  const id = Number(c.req.param("id"));
+  const updated = await setPurchased(c.env.DB, id, false);
+  if (!updated) {
+    return c.notFound();
+  }
+  return c.redirect("/purchased");
 });
