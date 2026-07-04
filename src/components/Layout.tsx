@@ -1,5 +1,11 @@
 import type { FC, PropsWithChildren } from "hono/jsx";
 
+const registerServiceWorker = `
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js'));
+}
+`;
+
 export const Layout: FC<PropsWithChildren<{ title: string }>> = ({
   title,
   children,
@@ -10,6 +16,11 @@ export const Layout: FC<PropsWithChildren<{ title: string }>> = ({
       <meta name="viewport" content="width=device-width, initial-scale=1" />
       <title>{title} - 欲しいものリスト</title>
       <link rel="stylesheet" href="/style.css" />
+      <link rel="manifest" href="/manifest.json" />
+      <link rel="icon" href="/icons/icon-192.png" />
+      <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+      <meta name="theme-color" content="#2563eb" />
+      <script dangerouslySetInnerHTML={{ __html: registerServiceWorker }} />
     </head>
     <body>
       <header class="app-header">
