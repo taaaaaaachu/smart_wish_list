@@ -37,6 +37,31 @@ describe("items routes", () => {
     expect(await res.text()).toContain("アイテムを追加");
   });
 
+  it("GET /items/new は連続追加ボタンを表示する", async () => {
+    const res = await app.request("/items/new", {}, env);
+    expect(await res.text()).toContain("連続追加");
+  });
+
+  it("POST /items でcontinueAdding指定時は/items/newへリダイレクトし、アイテムは作成される", async () => {
+    const res = await app.request(
+      "/items",
+      form({
+        title: "連続追加テスト商品",
+        url: "",
+        price: "5000",
+        wantLevel: "5",
+        usageFreq: "5",
+        continueAdding: "1",
+      }),
+      env,
+    );
+    expect(res.status).toBe(302);
+    expect(res.headers.get("Location")).toBe("/items/new");
+
+    const items = await listItems(env.DB, false);
+    expect(items.some((i) => i.title === "連続追加テスト商品")).toBe(true);
+  });
+
   it("POST /items で作成した後、一覧に表示される", async () => {
     await createTestItem("一覧テスト商品");
     const res = await app.request("/", {}, env);

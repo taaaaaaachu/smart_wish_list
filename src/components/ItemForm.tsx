@@ -71,7 +71,8 @@ export const ItemForm: FC<{
   submitLabel: string;
   values?: ItemFormValues;
   error?: string;
-}> = ({ action, submitLabel, values, error }) => (
+  showContinueAdd?: boolean;
+}> = ({ action, submitLabel, values, error, showContinueAdd }) => (
   <form method="post" action={action} class="item-form">
     {error && <p class="error">{error}</p>}
     <label>
@@ -102,6 +103,11 @@ export const ItemForm: FC<{
       <RangeField name="usageFreq" value={values?.usageFreq} criteria={USAGE_FREQ_CRITERIA} />
     </div>
     <button type="submit">{submitLabel}</button>
+    {showContinueAdd && (
+      <button type="submit" name="continueAdding" value="1">
+        連続追加(続けて次のアイテムを追加)
+      </button>
+    )}
     <script dangerouslySetInnerHTML={{ __html: updateCriteriaScript }} />
   </form>
 );

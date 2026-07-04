@@ -57,13 +57,14 @@ itemsRoute.get("/items/new", (c) => {
   return c.html(
     <Layout title="アイテム追加">
       <h1>アイテムを追加</h1>
-      <ItemForm action="/items" submitLabel="追加" />
+      <ItemForm action="/items" submitLabel="追加" showContinueAdd />
     </Layout>,
   );
 });
 
 itemsRoute.post("/items", async (c) => {
   const raw = await c.req.parseBody();
+  const continueAdding = raw.continueAdding === "1";
   const result = parseItemForm(raw);
   if (!result.ok) {
     return c.html(
@@ -74,13 +75,14 @@ itemsRoute.post("/items", async (c) => {
           submitLabel="追加"
           values={result.values}
           error={result.error}
+          showContinueAdd
         />
       </Layout>,
       400,
     );
   }
   await createItem(c.env.DB, result.input);
-  return c.redirect("/");
+  return c.redirect(continueAdding ? "/items/new" : "/");
 });
 
 itemsRoute.get("/items/:id/edit", async (c) => {
