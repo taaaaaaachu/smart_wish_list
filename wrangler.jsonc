@@ -23,5 +23,12 @@
   ],
   "observability": {
     "enabled": true
+  },
+  "vars": {
+    "CF_ACCESS_TEAM_DOMAIN": "example.cloudflareaccess.com",
+    // CloudFlare AccessでこのアプリのApplicationを作成した後、発行されたAUDタグをここに設定する。
+    "CF_ACCESS_AUD": "",
+    // ローカル開発時(CF_ACCESS_AUD未設定時)に使うユーザーメールアドレス。本番では使用しない。
+    "DEV_USER_EMAIL": ""
   }
 }

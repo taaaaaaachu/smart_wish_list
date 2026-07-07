@@ -4,7 +4,10 @@ import { Layout } from "../components/Layout";
 import { listItems } from "../db";
 import { selectItemsWithinBudget } from "../lib/budget";
 
-export const budgetRoute = new Hono<{ Bindings: Env }>();
+export const budgetRoute = new Hono<{
+  Bindings: Env;
+  Variables: { userEmail: string };
+}>();
 
 function BudgetForm({
   value,
@@ -56,7 +59,7 @@ budgetRoute.post("/budget", async (c) => {
     );
   }
 
-  const items = await listItems(c.env.DB, false);
+  const items = await listItems(c.env.DB, c.get("userEmail"), false);
   const result = selectItemsWithinBudget(items, budget);
   const selectedIds = new Set(result.selected.map((item) => item.id));
   const notSelected = items.filter((item) => !selectedIds.has(item.id));

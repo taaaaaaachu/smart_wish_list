@@ -49,37 +49,56 @@ function toItem(row: ItemRow): Item {
 
 export async function listItems(
   db: D1Database,
+  userEmail: string,
   purchased: boolean,
 ): Promise<Item[]> {
   const { results } = await db
-    .prepare("SELECT * FROM items WHERE purchased = ? ORDER BY created_at DESC")
-    .bind(purchased ? 1 : 0)
+    .prepare(
+      "SELECT * FROM items WHERE user_email = ? AND purchased = ? ORDER BY created_at DESC",
+    )
+    .bind(userEmail, purchased ? 1 : 0)
     .all<ItemRow>();
   return results.map(toItem);
 }
 
-export async function getItem(db: D1Database, id: number): Promise<Item | null> {
+export async function getItem(
+  db: D1Database,
+  userEmail: string,
+  id: number,
+): Promise<Item | null> {
   const row = await db
-    .prepare("SELECT * FROM items WHERE id = ?")
-    .bind(id)
+    .prepare("SELECT * FROM items WHERE id = ? AND user_email = ?")
+    .bind(id, userEmail)
     .first<ItemRow>();
   return row ? toItem(row) : null;
 }
 
-export async function createItem(db: D1Database, input: ItemInput): Promise<Item> {
+export async function createItem(
+  db: D1Database,
+  userEmail: string,
+  input: ItemInput,
+): Promise<Item> {
   const row = await db
     .prepare(
-      `INSERT INTO items (title, url, price, want_level, usage_freq)
-       VALUES (?, ?, ?, ?, ?)
+      `INSERT INTO items (title, url, price, want_level, usage_freq, user_email)
+       VALUES (?, ?, ?, ?, ?, ?)
        RETURNING *`,
     )
-    .bind(input.title, input.url, input.price, input.wantLevel, input.usageFreq)
+    .bind(
+      input.title,
+      input.url,
+      input.price,
+      input.wantLevel,
+      input.usageFreq,
+      userEmail,
+    )
     .first<ItemRow>();
   return toItem(row!);
 }
 
 export async function updateItem(
   db: D1Database,
+  userEmail: string,
   id: number,
   input: ItemInput,
 ): Promise<Item | null> {
@@ -87,20 +106,36 @@ export async function updateItem(
     .prepare(
       `UPDATE items
        SET title = ?, url = ?, price = ?, want_level = ?, usage_freq = ?, updated_at = datetime('now')
-       WHERE id = ?
+       WHERE id = ? AND user_email = ?
        RETURNING *`,
     )
-    .bind(input.title, input.url, input.price, input.wantLevel, input.usageFreq, id)
+    .bind(
+      input.title,
+      input.url,
+      input.price,
+      input.wantLevel,
+      input.usageFreq,
+      id,
+      userEmail,
+    )
     .first<ItemRow>();
   return row ? toItem(row) : null;
 }
 
-export async function deleteItem(db: D1Database, id: number): Promise<void> {
-  await db.prepare("DELETE FROM items WHERE id = ?").bind(id).run();
+export async function deleteItem(
+  db: D1Database,
+  userEmail: string,
+  id: number,
+): Promise<void> {
+  await db
+    .prepare("DELETE FROM items WHERE id = ? AND user_email = ?")
+    .bind(id, userEmail)
+    .run();
 }
 
 export async function setPurchased(
   db: D1Database,
+  userEmail: string,
   id: number,
   purchased: boolean,
 ): Promise<Item | null> {
@@ -108,10 +143,15 @@ export async function setPurchased(
     .prepare(
       `UPDATE items
        SET purchased = ?, purchased_at = ?, updated_at = datetime('now')
-       WHERE id = ?
+       WHERE id = ? AND user_email = ?
        RETURNING *`,
     )
-    .bind(purchased ? 1 : 0, purchased ? new Date().toISOString() : null, id)
+    .bind(
+      purchased ? 1 : 0,
+      purchased ? new Date().toISOString() : null,
+      id,
+      userEmail,
+    )
     .first<ItemRow>();
   return row ? toItem(row) : null;
 }

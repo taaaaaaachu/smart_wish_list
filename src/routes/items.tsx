@@ -14,7 +14,10 @@ import {
 import { parseItemForm } from "../lib/itemForm";
 import { calcPriority } from "../lib/priority";
 
-export const itemsRoute = new Hono<{ Bindings: Env }>();
+export const itemsRoute = new Hono<{
+  Bindings: Env;
+  Variables: { userEmail: string };
+}>();
 
 function sortByPriority(items: Item[]): Item[] {
   return [...items].sort(
@@ -25,7 +28,9 @@ function sortByPriority(items: Item[]): Item[] {
 }
 
 itemsRoute.get("/", async (c) => {
-  const items = sortByPriority(await listItems(c.env.DB, false));
+  const items = sortByPriority(
+    await listItems(c.env.DB, c.get("userEmail"), false),
+  );
   return c.html(
     <Layout title="未購入一覧">
       <h1>未購入アイテム(優先度順)</h1>
@@ -39,7 +44,7 @@ itemsRoute.get("/", async (c) => {
 });
 
 itemsRoute.get("/purchased", async (c) => {
-  const items = await listItems(c.env.DB, true);
+  const items = await listItems(c.env.DB, c.get("userEmail"), true);
   items.sort((a, b) => (b.purchasedAt ?? "").localeCompare(a.purchasedAt ?? ""));
   return c.html(
     <Layout title="購入済み一覧">
@@ -81,13 +86,13 @@ itemsRoute.post("/items", async (c) => {
       400,
     );
   }
-  await createItem(c.env.DB, result.input);
+  await createItem(c.env.DB, c.get("userEmail"), result.input);
   return c.redirect(continueAdding ? "/items/new" : "/");
 });
 
 itemsRoute.get("/items/:id/edit", async (c) => {
   const id = Number(c.req.param("id"));
-  const item = await getItem(c.env.DB, id);
+  const item = await getItem(c.env.DB, c.get("userEmail"), id);
   if (!item) {
     return c.notFound();
   }
@@ -127,7 +132,7 @@ itemsRoute.post("/items/:id", async (c) => {
       400,
     );
   }
-  const updated = await updateItem(c.env.DB, id, result.input);
+  const updated = await updateItem(c.env.DB, c.get("userEmail"), id, result.input);
   if (!updated) {
     return c.notFound();
   }
@@ -136,13 +141,13 @@ itemsRoute.post("/items/:id", async (c) => {
 
 itemsRoute.post("/items/:id/delete", async (c) => {
   const id = Number(c.req.param("id"));
-  await deleteItem(c.env.DB, id);
+  await deleteItem(c.env.DB, c.get("userEmail"), id);
   return c.redirect("/");
 });
 
 itemsRoute.post("/items/:id/purchase", async (c) => {
   const id = Number(c.req.param("id"));
-  const updated = await setPurchased(c.env.DB, id, true);
+  const updated = await setPurchased(c.env.DB, c.get("userEmail"), id, true);
   if (!updated) {
     return c.notFound();
   }
@@ -151,7 +156,7 @@ itemsRoute.post("/items/:id/purchase", async (c) => {
 
 itemsRoute.post("/items/:id/unpurchase", async (c) => {
   const id = Number(c.req.param("id"));
-  const updated = await setPurchased(c.env.DB, id, false);
+  const updated = await setPurchased(c.env.DB, c.get("userEmail"), id, false);
   if (!updated) {
     return c.notFound();
   }

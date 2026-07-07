@@ -49,8 +49,34 @@ Cloudflareアカウントが1つだけであればwranglerが自動解決する�
 これが未設定の場合、`deploy`ジョブは認証エラーで失敗する
 (`test`ジョブは無関係に動作する)。
 
-## Cloudflare Accessによる保護
+## マルチテナント化(Cloudflare Access連携)
 
-このアプリ自体には認証機能を実装していない。`wish-list.example.com`は
-Cloudflare Access(Zero Trust)でアクセス制御済み(ダッシュボード側で設定)。
-アプリ側にコード変更は不要で、以降もCloudflareの設定のみで完結する。
+`wish-list.example.com`はCloudflare Access(Zero Trust)でアクセス制御しており、
+アプリはAccessが認証したメールアドレスをテナントキーとして各アイテムを分離している
+(`items.user_email`列)。同じアプリを複数人で使っても、各自が自分の登録したアイテムのみを見る。
+
+### 仕組み
+
+- Accessを通過したリクエストには`Cf-Access-Jwt-Assertion`ヘッダーが付与される。
+- `src/lib/auth.ts`の`requireUser`ミドルウェアがこのJWTをCloudflareの公開鍵
+  (`https://<team-domain>/cdn-cgi/access/certs`)で検証し、`aud`クレームを照合したうえで
+  `email`クレームを取り出す。
+- 検証に成功したメールアドレスを`c.set("userEmail", ...)`し、以降すべてのDB操作は
+  このメールアドレスでフィルタされる。
+
+### 必要な設定(`wrangler.jsonc`の`vars`)
+
+- `CF_ACCESS_TEAM_DOMAIN`: Accessのteam domain(例: `example.cloudflareaccess.com`)
+- `CF_ACCESS_AUD`: CloudflareダッシュボードでこのアプリのAccess Applicationを作成した際に
+  発行されるAUDタグ。**まだ空文字のまま**なので、Application作成後に値を設定する必要がある。
+
+`CF_ACCESS_AUD`が空の間は、JWT検証をスキップして`DEV_USER_EMAIL`(ローカル開発用の固定
+メールアドレス)にフォールバックする。本番公開前に必ず`CF_ACCESS_AUD`を設定すること。
+
+### ローカル開発
+
+`.dev.vars`に以下を設定すると、Access無しでログイン状態を再現できる。
+
+```
+DEV_USER_EMAIL=you@example.com
+```

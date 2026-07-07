@@ -24,7 +24,7 @@ async function createTestItem(title: string) {
     env,
   );
   expect(res.status).toBe(302);
-  const items = await listItems(env.DB, false);
+  const items = await listItems(env.DB, "test@example.com", false);
   const created = items.find((i) => i.title === title);
   if (!created) throw new Error("作成したアイテムが見つかりません");
   return created;
@@ -58,7 +58,7 @@ describe("items routes", () => {
     expect(res.status).toBe(302);
     expect(res.headers.get("Location")).toBe("/items/new");
 
-    const items = await listItems(env.DB, false);
+    const items = await listItems(env.DB, "test@example.com", false);
     expect(items.some((i) => i.title === "連続追加テスト商品")).toBe(true);
   });
 
