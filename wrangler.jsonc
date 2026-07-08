@@ -27,8 +27,8 @@
   "vars": {
     "CF_ACCESS_TEAM_DOMAIN": "example.cloudflareaccess.com",
     // CloudFlare AccessでこのアプリのApplicationを作成した後、発行されたAUDタグをここに設定する。
-    "CF_ACCESS_AUD": "",
+    "CF_ACCESS_AUD": "20bef9e2f97cd137f001a2f7650b18dc0a88e8d41c80be5c60f732bd4aff37e7",
     // ローカル開発時(CF_ACCESS_AUD未設定時)に使うユーザーメールアドレス。本番では使用しない。
-    "DEV_USER_EMAIL": ""
+    "DEV_USER_EMAIL": "test@example.com"
   }
 }

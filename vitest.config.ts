@@ -16,6 +16,10 @@ export default defineConfig(async () => {
         miniflare: {
           bindings: {
             TEST_MIGRATIONS: migrations,
+            // テストはCloudflare Accessの実際のJWTを持たないため、本番のwrangler.jsonc設定
+            // に関わらずAUD未設定のフォールバック経路(DEV_USER_EMAIL)を強制的に使う。
+            CF_ACCESS_TEAM_DOMAIN: "",
+            CF_ACCESS_AUD: "",
             DEV_USER_EMAIL: "test@example.com",
           },
         },
