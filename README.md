@@ -23,7 +23,9 @@ npm run db:migrate:remote   # 本番D1にスキーマ適用(初回・マイグ�
 npm run deploy               # wrangler deploy
 ```
 
-本番URL: https://wish-list.example.com (example.comのCloudflareゾーンにカスタムドメインとして割り当て済み)
+`wrangler.jsonc`の`routes`の`pattern`と`CF_ACCESS_TEAM_DOMAIN`はプレースホルダー(`example.com`等)。
+通常のデプロイは後述のGitHub Actionsが行い、その際にGitHub Secretsの値で置き換える。
+手元からデプロイする場合は、これらを自分の値に書き換えてから実行すること。
 
 ## CI/CD (GitHub Actions)
 
@@ -41,6 +43,9 @@ npm run deploy               # wrangler deploy
   「Edit Cloudflare Workers」テンプレートで発行したトークン
   (D1マイグレーションも実行するため、対象アカウントのD1編集権限も含める)
 
+- `PROD_HOSTNAME`: 本番のカスタムドメイン(例: `wish-list.your-domain.com`)
+- `ACCESS_TEAM_DOMAIN`: Cloudflare Accessのteam domain(例: `your-team.cloudflareaccess.com`)
+
 `CLOUDFLARE_ACCOUNT_ID`は設定していない。トークンがアクセスできる
 Cloudflareアカウントが1つだけであればwranglerが自動解決するため不要。
 複数アカウントを持つトークンを使う場合は`accountId`をwrangler-actionに
@@ -51,7 +56,7 @@ Cloudflareアカウントが1つだけであればwranglerが自動解決する�
 
 ## マルチテナント化(Cloudflare Access連携)
 
-`wish-list.example.com`はCloudflare Access(Zero Trust)でアクセス制御しており、
+本番環境はCloudflare Access(Zero Trust)でアクセス制御しており、
 アプリはAccessが認証したメールアドレスをテナントキーとして各アイテムを分離している
 (`items.user_email`列)。同じアプリを複数人で使っても、各自が自分の登録したアイテムのみを見る。
 
@@ -66,12 +71,13 @@ Cloudflareアカウントが1つだけであればwranglerが自動解決する�
 
 ### 必要な設定(`wrangler.jsonc`の`vars`)
 
-- `CF_ACCESS_TEAM_DOMAIN`: Accessのteam domain(例: `example.cloudflareaccess.com`)
+- `CF_ACCESS_TEAM_DOMAIN`: Accessのteam domain(例: `your-team.cloudflareaccess.com`)
 - `CF_ACCESS_AUD`: CloudflareダッシュボードでこのアプリのAccess Applicationを作成した際に
-  発行されるAUDタグ。**まだ空文字のまま**なので、Application作成後に値を設定する必要がある。
+  発行されるAUDタグ。
 
 `CF_ACCESS_AUD`が空の間は、JWT検証をスキップして`DEV_USER_EMAIL`(ローカル開発用の固定
-メールアドレス)にフォールバックする。本番公開前に必ず`CF_ACCESS_AUD`を設定すること。
+メールアドレス)にフォールバックする。`DEV_USER_EMAIL`も空なら全リクエストを401で拒否するので、
+本番では`DEV_USER_EMAIL`を空のままにすること。
 
 ### ローカル開発
 
@@ -80,3 +86,7 @@ Cloudflareアカウントが1つだけであればwranglerが自動解決する�
 ```
 DEV_USER_EMAIL=you@example.com
 ```
+
+## ライセンス
+
+[MIT License](LICENSE)

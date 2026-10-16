@@ -17,6 +17,15 @@ describe("認証ミドルウェア", () => {
     expect(res.status).toBe(401);
   });
 
+  it("CloudFlare Access未設定時にDEV_USER_EMAILが無ければX-Test-User-Emailヘッダーがあっても401になる", async () => {
+    const res = await app.request(
+      "/",
+      { headers: { "X-Test-User-Email": "alice@example.com" } },
+      { ...env, DEV_USER_EMAIL: "" },
+    );
+    expect(res.status).toBe(401);
+  });
+
   it("X-Test-User-Emailヘッダーがある場合はDEV_USER_EMAILより優先される", async () => {
     const res = await app.request(
       "/items",

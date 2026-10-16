@@ -34,6 +34,17 @@ jobs:
           node-version: lts/*
           cache: npm
       - run: npm ci
+      # 本番のドメイン等は公開リポジトリに含めないため、GitHub Secretsからwrangler.jsoncへ差し込む
+      - name: Inject production values into wrangler.jsonc
+        env:
+          PROD_HOSTNAME: ${{ secrets.PROD_HOSTNAME }}
+          ACCESS_TEAM_DOMAIN: ${{ secrets.ACCESS_TEAM_DOMAIN }}
+        run: |
+          sed -i \
+            -e "s|wish-list\.example\.com|${PROD_HOSTNAME:?}|" \
+            -e "s|example\.cloudflareaccess\.com|${ACCESS_TEAM_DOMAIN:?}|" \
+            wrangler.jsonc
+          ! grep -nE "wish-list\.example\.com|example\.cloudflareaccess\.com" wrangler.jsonc
       - name: Apply D1 migrations
         uses: cloudflare/wrangler-action@v3
         with:

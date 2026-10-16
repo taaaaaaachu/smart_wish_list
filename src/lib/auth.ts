@@ -55,15 +55,15 @@ export const requireUser: MiddlewareHandler<{
   }
 
   // CloudFlare Accessが未設定のローカル開発・テスト環境向けフォールバック。
-  const testEmail = c.req.header(TEST_USER_EMAIL_HEADER);
+  // DEV_USER_EMAILが設定された環境でだけ有効にする。本番でAUDを設定し忘れても、
+  // X-Test-User-Emailヘッダーで任意のユーザーになりすませないようにするため。
   const devEmail = c.env.DEV_USER_EMAIL;
-  const email = testEmail || devEmail;
-  if (!email) {
+  if (!devEmail) {
     return c.text(
       "DEV_USER_EMAIL が未設定です。ローカル開発用のユーザーメールアドレスを設定してください。",
       401,
     );
   }
-  c.set("userEmail", email);
+  c.set("userEmail", c.req.header(TEST_USER_EMAIL_HEADER) || devEmail);
   await next();
 };
