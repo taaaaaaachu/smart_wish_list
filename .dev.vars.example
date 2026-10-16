@@ -1,3 +1,5 @@
 # ローカル開発用の環境変数。このファイルを .dev.vars にコピーして使う(.dev.varsはgitignore対象)。
 # ローカルにはCloudflare Accessがないため、このメールアドレスのユーザーとして動作する。本番では設定しない。
 DEV_USER_EMAIL=you@example.com
+# ローカルにはAccessがないため、wrangler.jsoncのCF_ACCESS_AUDを空で上書きしてJWT検証を無効にする
+CF_ACCESS_AUD=

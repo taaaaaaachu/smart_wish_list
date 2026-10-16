@@ -3,6 +3,9 @@
   "name": "smart-wish-list",
   "main": "src/index.tsx",
   "compatibility_date": "2026-06-01",
+  // workers.devとPreview URLはCloudflare Accessで保護されないため無効化する
+  "workers_dev": false,
+  "preview_urls": false,
   "assets": {
     "directory": "./public",
     "binding": "ASSETS"

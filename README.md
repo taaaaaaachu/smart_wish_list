@@ -22,7 +22,8 @@ npm run db:migrate:local         # ローカルD1にスキーマ適用
 npm run dev                      # http://localhost:8787
 ```
 
-ローカルにはCloudflare Accessがないため、`.dev.vars`の`DEV_USER_EMAIL`のユーザーとして動作する。
+ローカルにはCloudflare Accessがないため、`.dev.vars`で`CF_ACCESS_AUD`を空にしてJWT検証を無効にし、
+`DEV_USER_EMAIL`のユーザーとして動作する。
 
 ## テスト・型チェック
 
