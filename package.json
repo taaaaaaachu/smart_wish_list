@@ -23,5 +23,5 @@
     "vitest": "^5.0.5",
     "wrangler": "^4.154.0"
   },
-  "packageManager": "pnpm@11.9.0"
+  "packageManager": "pnpm@12.16.1"
 }
