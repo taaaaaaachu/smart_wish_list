@@ -48,12 +48,12 @@ jobs:
             wrangler.jsonc
           ! grep -nE "wish-list\.example\.com|example\.cloudflareaccess\.com" wrangler.jsonc
       - name: Apply D1 migrations
-        uses: cloudflare/wrangler-action@9acf94ace14e7dc412b076f2c5c20b8ce93c79cd # v3
+        uses: cloudflare/wrangler-action@953926a2e2182532811c01a25e53647d93bf07c0 # v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           command: d1 migrations apply DB --remote
       - name: Deploy Worker
-        uses: cloudflare/wrangler-action@9acf94ace14e7dc412b076f2c5c20b8ce93c79cd # v3
+        uses: cloudflare/wrangler-action@953926a2e2182532811c01a25e53647d93bf07c0 # v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           command: deploy --minify
