@@ -16,10 +16,10 @@ Cloudflare Workers + Hono + D1 で構築する、優先度(コスパ)ベース�
 ## セットアップ
 
 ```bash
-npm install
+pnpm install
 cp .dev.vars.example .dev.vars   # ローカルでログインしているとみなすユーザーを設定
-npm run db:migrate:local         # ローカルD1にスキーマ適用
-npm run dev                      # http://localhost:8787
+pnpm run db:migrate:local        # ローカルD1にスキーマ適用
+pnpm run dev                     # http://localhost:8787
 ```
 
 ローカルにはCloudflare Accessがないため、`.dev.vars`で`CF_ACCESS_AUD`を空にしてJWT検証を無効にし、
@@ -28,9 +28,9 @@ npm run dev                      # http://localhost:8787
 ## テスト・型チェック
 
 ```bash
-npm test
-npx wrangler types   # worker-configuration.d.ts(gitignore対象)を生成
-npm run typecheck
+pnpm test
+pnpm exec wrangler types   # worker-configuration.d.ts(gitignore対象)を生成
+pnpm run typecheck
 ```
 
 ## デプロイ
@@ -38,13 +38,13 @@ npm run typecheck
 通常は後述のGitHub Actionsがmainへのpushでデプロイする。手元からデプロイする場合は以下。
 
 ```bash
-npm run db:migrate:remote   # 本番D1にスキーマ適用(初回・マイグレーション追加時)
-npm run deploy              # wrangler deploy
+pnpm run db:migrate:remote  # 本番D1にスキーマ適用(初回・マイグレーション追加時)
+pnpm run deploy             # wrangler deploy
 ```
 
 `wrangler.jsonc`の次の値は自分の環境に合わせる。
 
-- `d1_databases[0].database_id`: `npx wrangler d1 create smart-wish-list-db`で作成したDBのID
+- `d1_databases[0].database_id`: `pnpm exec wrangler d1 create smart-wish-list-db`で作成したDBのID
   (リポジトリに入っている値は開発者のもの)
 - `routes`の`pattern`と`CF_ACCESS_TEAM_DOMAIN`: プレースホルダー(`example.com`等)。
   GitHub Actionsでデプロイする場合はSecretsの値で置き換えられるので、書き換えなくてよい
@@ -54,7 +54,7 @@ npm run deploy              # wrangler deploy
 
 `.github/workflows/ci.yml` により、以下を自動化している。
 
-- **すべてのpush/PR**: 型チェック(`npm run typecheck`)とテスト(`npm test`)を実行
+- **すべてのpush/PR**: 型チェック(`pnpm run typecheck`)とテスト(`pnpm test`)を実行
 - **mainブランチへのpush**: テスト成功後、本番D1へのマイグレーション適用と`wrangler deploy`を自動実行
   (push = 本番反映)
 
