@@ -15,7 +15,10 @@ Cloudflare Workers + Hono + D1 で構築する、優先度(コスパ)ベース�
 
 ## セットアップ
 
+Node.js(26.13.0)とpnpm(12.16.1)は[mise](https://mise.jdx.dev/)で管理している(`mise.toml`)。
+
 ```bash
+mise install
 pnpm install
 cp .dev.vars.example .dev.vars   # ローカルでログインしているとみなすユーザーを設定
 pnpm run db:migrate:local        # ローカルD1にスキーマ適用
