@@ -11,7 +11,8 @@
     "typecheck": "tsc --noEmit",
     "cf-typegen": "wrangler types",
     "db:migrate:local": "wrangler d1 migrations apply DB --local",
-    "db:migrate:remote": "wrangler d1 migrations apply DB --remote"
+    "db:migrate:remote": "wrangler d1 migrations apply DB --remote",
+    "lint": "eslint ."
   },
   "dependencies": {
     "hono": "^4.13.14",
@@ -19,7 +20,11 @@
   },
   "devDependencies": {
     "@cloudflare/vitest-plugin": "^1.4.11",
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.14.0",
+    "globals": "^17.13.0",
     "typescript": "^6.0.3",
+    "typescript-eslint": "^8.72.1",
     "vitest": "^5.0.5",
     "wrangler": "^4.156.0"
   },
