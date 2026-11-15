@@ -86,10 +86,9 @@ export const ItemForm: FC<{
     <label>
       値段(円)
       <input
-        type="number"
+        type="text"
+        inputmode="numeric"
         name="price"
-        min="1"
-        step="1"
         required
         value={values?.price ?? ""}
       />

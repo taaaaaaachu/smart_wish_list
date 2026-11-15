@@ -3,6 +3,7 @@ import { ItemList } from "../components/ItemList";
 import { Layout } from "../components/Layout";
 import { listItems } from "../db";
 import { selectItemsWithinBudget } from "../lib/budget";
+import { parseYen } from "../lib/yen";
 
 export const budgetRoute = new Hono<{
   Bindings: Env;
@@ -21,10 +22,9 @@ function BudgetForm({
       <label>
         予算(円)
         <input
-          type="number"
+          type="text"
+          inputmode="numeric"
           name="budget"
-          min="0"
-          step="1"
           required
           value={value ?? ""}
         />
@@ -46,7 +46,7 @@ budgetRoute.get("/budget", (c) => {
 budgetRoute.post("/budget", async (c) => {
   const raw = await c.req.parseBody();
   const budgetStr = typeof raw.budget === "string" ? raw.budget : "";
-  const budget = Number(budgetStr);
+  const budget = parseYen(budgetStr);
 
   if (!Number.isInteger(budget) || budget < 0) {
     return c.html(

@@ -1,5 +1,6 @@
 import type { ItemInput } from "../db";
 import type { ItemFormValues } from "../components/ItemForm";
+import { parseYen } from "./yen";
 
 export type ParseItemFormResult =
   | { ok: true; input: ItemInput }
@@ -17,7 +18,7 @@ export function parseItemForm(raw: Record<string, unknown>): ParseItemFormResult
 
   const title = values.title?.trim() ?? "";
   const url = values.url?.trim() || null;
-  const price = Number(values.price);
+  const price = parseYen(values.price ?? "");
   const wantLevel = Number(values.wantLevel);
   const usageFreq = Number(values.usageFreq);
 
