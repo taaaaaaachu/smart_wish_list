@@ -5,6 +5,7 @@ import {
   findCriterion,
   type RatingCriterion,
 } from "../lib/ratingCriteria";
+import { yenInputHandler } from "../lib/yen";
 
 export type ItemFormValues = {
   title?: string;
@@ -90,6 +91,8 @@ export const ItemForm: FC<{
         inputmode="numeric"
         name="price"
         required
+        oninput={yenInputHandler}
+        oncompositionend={yenInputHandler}
         value={values?.price ?? ""}
       />
     </label>

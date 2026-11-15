@@ -3,7 +3,7 @@ import { ItemList } from "../components/ItemList";
 import { Layout } from "../components/Layout";
 import { listItems } from "../db";
 import { selectItemsWithinBudget } from "../lib/budget";
-import { parseYen } from "../lib/yen";
+import { parseYen, yenInputHandler } from "../lib/yen";
 
 export const budgetRoute = new Hono<{
   Bindings: Env;
@@ -26,6 +26,8 @@ function BudgetForm({
           inputmode="numeric"
           name="budget"
           required
+          oninput={yenInputHandler}
+          oncompositionend={yenInputHandler}
           value={value ?? ""}
         />
       </label>
