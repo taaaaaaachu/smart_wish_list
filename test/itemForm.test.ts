@@ -22,6 +22,16 @@ describe("parseItemForm", () => {
     });
   });
 
+  it("¥やカンマ付きの値段を数値に整形する", () => {
+    const result = parseItemForm({
+      title: "テスト",
+      price: "¥1,980",
+      wantLevel: "5",
+      usageFreq: "5",
+    });
+    expect(result.ok && result.input.price).toBe(1980);
+  });
+
   it("urlが空文字の場合はnullになる", () => {
     const result = parseItemForm({
       title: "テスト",

@@ -59,6 +59,16 @@ describe("budget route", () => {
     expect(await res.text()).toContain("0以上の整数");
   });
 
+  it("¥やカンマ付きの予算も受け付ける", async () => {
+    const res = await app.request("/budget", form({ budget: "¥10,000" }), env);
+    expect(res.status).toBe(200);
+  });
+
+  it("空の予算(¥のみ)はエラーになる(400)", async () => {
+    const res = await app.request("/budget", form({ budget: "¥" }), env);
+    expect(res.status).toBe(400);
+  });
+
   it("数値でない予算はエラーになる(400)", async () => {
     const res = await app.request("/budget", form({ budget: "abc" }), env);
     expect(res.status).toBe(400);
