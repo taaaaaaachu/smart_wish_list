@@ -1,5 +1,4 @@
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
+import { createMcpHandler, McpServer, type CallToolResult } from "@modelcontextprotocol/server";
 import { Hono } from "hono";
 import { z } from "zod";
 import {
@@ -9,127 +8,138 @@ import {
   setPurchased,
   updateItem,
 } from "./db";
+import { authenticateAgent } from "./lib/agentConnections";
 import { selectItemsWithinBudget } from "./lib/budget";
-import { findUserByMcpToken } from "./lib/mcpToken";
 import { sortByPriority } from "./lib/priority";
+import { issuerOf } from "./routes/oauth";
 
-// Cloudflare AccessはこのパスだけBypassにする前提。認証は個人アクセストークン(/settings/mcpで発行)で行う。
-export const mcpRoute = new Hono<{ Bindings: Env }>();
+/**
+ * エージェント向けのMCPエンドポイント(attendance-manager-web と同じ方式)。Cloudflare AccessをBypassするパスなので
+ * requireUser は通さず、毎リクエスト Bearer トークン(手動発行・OAuth)だけで接続を確かめる。
+ * セッションは持たない(ステートレス)。トークンはこのエンドポイント以外では受け付けない。
+ */
+
+const INSTRUCTIONS = `欲しいものリストは、欲しい物を「値段」「欲しい度(1〜10)」「使用頻度(1〜10)」で登録し、コスパで並べるアプリです。
+- 優先度 = 値段 ÷(欲しい度 × 使用頻度)。小さいほどコスパが良い。
+- 値段は円の整数で渡します。
+- この接続で操作できるのは、接続を許可したユーザー本人のリストだけです。`;
 
 const itemInput = {
-  title: z.string().trim().min(1).describe("商品名"),
-  url: z.string().optional().describe("商品ページのURL"),
+  title: z.string().trim().min(1).max(200).describe("商品名"),
+  url: z.string().max(2048).optional().describe("商品ページのURL"),
   price: z.number().int().min(1).describe("値段(円)"),
   wantLevel: z.number().int().min(1).max(10).describe("欲しい度(1〜10)"),
   usageFreq: z.number().int().min(1).max(10).describe("使用頻度(1〜10)"),
 };
+const id = z.number().int().describe("アイテムのID");
 
-function json(value: unknown) {
-  return { content: [{ type: "text" as const, text: JSON.stringify(value) }] };
+const READ = { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false };
+const WRITE = { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false };
+const IDEMPOTENT = { ...WRITE, idempotentHint: true };
+const DESTRUCTIVE = { ...IDEMPOTENT, destructiveHint: true };
+
+function ok(data: unknown): CallToolResult {
+  return { content: [{ type: "text", text: JSON.stringify(data) }] };
 }
-
-function notFound(id: number) {
-  return {
-    content: [{ type: "text" as const, text: `id=${id} のアイテムは見つかりません。` }],
-    isError: true,
-  };
+function fail(message: string): CallToolResult {
+  return { isError: true, content: [{ type: "text", text: message }] };
 }
+const notFound = (itemId: number) => fail(`id=${itemId} のアイテムは見つかりません。`);
+const urlOf = (url: string | undefined) => url?.trim() || null;
 
-function buildServer(db: D1Database, userEmail: string): McpServer {
-  const server = new McpServer({ name: "smart-wish-list", version: "0.1.0" });
+export function createMcpServer(db: D1Database, userEmail: string): McpServer {
+  const server = new McpServer({ name: "smart-wish-list", version: "1.0.0" }, { instructions: INSTRUCTIONS });
 
   server.registerTool(
     "list_items",
     {
-      description:
-        "欲しいものリストを返す。未購入は優先度(値段÷(欲しい度×使用頻度)、小さいほどコスパが良い)順、購入済みは購入日の新しい順。",
-      inputSchema: { purchased: z.boolean().default(false).describe("trueで購入済みを返す") },
-      annotations: { readOnlyHint: true },
+      title: "アイテム一覧",
+      description: "未購入は優先度の高い(コスパの良い)順、購入済みは購入日の新しい順に返す。",
+      inputSchema: z.object({ purchased: z.boolean().optional().describe("trueで購入済みを返す(省略時false)") }),
+      annotations: READ,
     },
-    async ({ purchased }) => {
+    async ({ purchased = false }) => {
       const items = await listItems(db, userEmail, purchased);
-      return json(
-        purchased
+      return ok({
+        items: purchased
           ? items.sort((a, b) => (b.purchasedAt ?? "").localeCompare(a.purchasedAt ?? ""))
           : sortByPriority(items),
-      );
+      });
     },
   );
 
   server.registerTool(
     "add_item",
-    { description: "欲しいものを追加する。", inputSchema: itemInput },
-    async ({ url, ...rest }) => json(await createItem(db, userEmail, { ...rest, url: url?.trim() || null })),
+    { title: "アイテムを追加", description: "欲しいものを追加する。", inputSchema: z.object(itemInput), annotations: WRITE },
+    async ({ url, ...rest }) => ok(await createItem(db, userEmail, { ...rest, url: urlOf(url) })),
   );
 
   server.registerTool(
     "update_item",
     {
+      title: "アイテムを編集",
       description: "アイテムの内容を書き換える(全項目を指定する)。",
-      inputSchema: { id: z.number().int(), ...itemInput },
-      annotations: { idempotentHint: true },
+      inputSchema: z.object({ id, ...itemInput }),
+      annotations: IDEMPOTENT,
     },
-    async ({ id, url, ...rest }) => {
-      const item = await updateItem(db, userEmail, id, { ...rest, url: url?.trim() || null });
-      return item ? json(item) : notFound(id);
+    async ({ id: itemId, url, ...rest }) => {
+      const item = await updateItem(db, userEmail, itemId, { ...rest, url: urlOf(url) });
+      return item ? ok(item) : notFound(itemId);
     },
   );
 
   server.registerTool(
     "set_purchased",
     {
-      description: "アイテムを購入済み(または未購入に戻す)にする。",
-      inputSchema: { id: z.number().int(), purchased: z.boolean().default(true) },
-      annotations: { idempotentHint: true },
+      title: "購入済みにする",
+      description: "アイテムを購入済みにする。purchased: false で未購入に戻す。",
+      inputSchema: z.object({ id, purchased: z.boolean().optional().describe("省略時true") }),
+      annotations: IDEMPOTENT,
     },
-    async ({ id, purchased }) => {
-      const item = await setPurchased(db, userEmail, id, purchased);
-      return item ? json(item) : notFound(id);
+    async ({ id: itemId, purchased = true }) => {
+      const item = await setPurchased(db, userEmail, itemId, purchased);
+      return item ? ok(item) : notFound(itemId);
     },
   );
 
   server.registerTool(
     "delete_item",
-    {
-      description: "アイテムを削除する。元に戻せない。",
-      inputSchema: { id: z.number().int() },
-      annotations: { destructiveHint: true },
-    },
-    async ({ id }) => {
-      await deleteItem(db, userEmail, id);
-      return json({ deleted: id });
+    { title: "アイテムを削除", description: "アイテムを削除する。元に戻せない。", inputSchema: z.object({ id }), annotations: DESTRUCTIVE },
+    async ({ id: itemId }) => {
+      await deleteItem(db, userEmail, itemId);
+      return ok({ deleted: itemId });
     },
   );
 
   server.registerTool(
     "suggest_within_budget",
     {
-      description:
-        "予算内で、コスパ(欲しい度×使用頻度÷値段)の合計が最大になる未購入アイテムの組み合わせを返す。",
-      inputSchema: { budget: z.number().int().min(0).describe("予算(円)") },
-      annotations: { readOnlyHint: true },
+      title: "予算で選ぶ",
+      description: "予算内で、コスパ(欲しい度×使用頻度÷値段)の合計が最大になる未購入アイテムの組み合わせを返す。",
+      inputSchema: z.object({ budget: z.number().int().min(0).describe("予算(円)") }),
+      annotations: READ,
     },
-    async ({ budget }) =>
-      json(selectItemsWithinBudget(await listItems(db, userEmail, false), budget)),
+    async ({ budget }) => ok(selectItemsWithinBudget(await listItems(db, userEmail, false), budget)),
   );
 
   return server;
 }
 
-mcpRoute.all("/", async (c) => {
-  const token = c.req.header("Authorization")?.match(/^Bearer\s+(\S+)$/i)?.[1];
-  const userEmail = token ? await findUserByMcpToken(c.env.DB, token) : null;
-  if (!userEmail) {
-    c.header("WWW-Authenticate", 'Bearer realm="smart-wish-list"');
-    return c.json({ error: "有効なトークンが必要です。/settings/mcp で発行してください。" }, 401);
-  }
+/** 401で認可サーバーの在処を知らせる(RFC 9728) */
+function unauthorized(url: string): Response {
+  const metadata = `${issuerOf(url)}/.well-known/oauth-protected-resource/mcp`;
+  return Response.json(
+    { error: "invalid_token", error_description: "エージェント接続のトークンが必要です。" },
+    { status: 401, headers: { "WWW-Authenticate": `Bearer resource_metadata="${metadata}"` } },
+  );
+}
 
-  // ステートレス(セッションなし)で1リクエストごとにサーバーを作る。Durable Objectsを使わず無料枠を節約するため。
-  const server = buildServer(c.env.DB, userEmail);
-  const transport = new WebStandardStreamableHTTPServerTransport({
-    sessionIdGenerator: undefined,
-    enableJsonResponse: true,
-  });
-  await server.connect(transport);
-  return transport.handleRequest(c.req.raw);
+export const mcpRoutes = new Hono<{ Bindings: Env }>();
+
+mcpRoutes.all("/", async (c) => {
+  const token = c.req.header("Authorization")?.match(/^Bearer\s+(\S+)$/i)?.[1];
+  const agent = token ? await authenticateAgent(c.env.DB, token) : null;
+  if (!token || !agent) return unauthorized(c.req.url);
+  const handler = createMcpHandler(() => createMcpServer(c.env.DB, agent.userEmail));
+  return handler.fetch(c.req.raw, { authInfo: { token, clientId: agent.connectionId, scopes: [] } });
 });

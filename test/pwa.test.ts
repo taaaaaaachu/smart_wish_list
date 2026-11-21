@@ -1,6 +1,6 @@
 import { env } from "cloudflare:test";
 import { describe, expect, it } from "vitest";
-import app from "../src/index";
+import { app } from "../src/index";
 
 describe("PWA対応", () => {
   it("HTML内にmanifestリンクとService Worker登録スクリプトが含まれる", async () => {
