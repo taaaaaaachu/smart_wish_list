@@ -15,8 +15,10 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.2",
     "hono": "^4.13.18",
-    "jose": "^6.2.17"
+    "jose": "^6.2.17",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@cloudflare/vitest-plugin": "^1.8.0",

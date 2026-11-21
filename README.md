@@ -98,6 +98,18 @@ pnpm run deploy             # wrangler deploy
 メールアドレス)にフォールバックする。`DEV_USER_EMAIL`も空なら全リクエストを401で拒否するので、
 Accessの設定を忘れても誰かになりすまされることはない。
 
+## MCP連携
+
+`/mcp` はMCP(Streamable HTTP、ステートレス)のエンドポイントで、Muse などのMCPクライアントから
+リストの一覧・追加・更新・購入済み化・削除・予算での提案ができる(`src/mcp.ts`)。
+
+- 各ユーザーが `/settings/mcp` で自分の個人アクセストークンを発行し、MCPクライアントに
+  `Authorization: Bearer <トークン>` ヘッダーとして設定する。トークンは1ユーザー1つで、再発行すると古いものは無効になる。
+- DBにはトークンのSHA-256ハッシュだけを保存する(`mcp_tokens`テーブル)。
+- MCPクライアントはAccessのログインを通れないため、**Cloudflare Accessで `/mcp` パスだけをBypassにする**必要がある。
+  Zero Trustダッシュボードで、本番ドメインの`/mcp`をパスにしたApplicationを別に作り、Bypassポリシー(Include: Everyone)を付ける。
+  `/mcp` 以外は今までどおりAccessで守られ、`/settings/mcp`(トークン発行画面)もAccessの内側にある。
+
 ## ライセンス
 
 [MIT License](LICENSE)

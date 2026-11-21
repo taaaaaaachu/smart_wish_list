@@ -9,23 +9,14 @@ import {
   listItems,
   setPurchased,
   updateItem,
-  type Item,
 } from "../db";
 import { parseItemForm } from "../lib/itemForm";
-import { calcPriority } from "../lib/priority";
+import { sortByPriority } from "../lib/priority";
 
 export const itemsRoute = new Hono<{
   Bindings: Env;
   Variables: { userEmail: string };
 }>();
-
-function sortByPriority(items: Item[]): Item[] {
-  return [...items].sort(
-    (a, b) =>
-      calcPriority(a.price, a.wantLevel, a.usageFreq) -
-      calcPriority(b.price, b.wantLevel, b.usageFreq),
-  );
-}
 
 itemsRoute.get("/", async (c) => {
   const items = sortByPriority(
