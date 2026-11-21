@@ -1,6 +1,6 @@
 import { env } from "cloudflare:test";
 import { describe, expect, it } from "vitest";
-import app from "../src/index";
+import { app } from "../src/index";
 
 describe("認証ミドルウェア", () => {
   it("CloudFlare Access未設定時はDEV_USER_EMAILで認証される", async () => {

@@ -15,12 +15,15 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@modelcontextprotocol/server": "^2.4.0",
     "hono": "^4.13.18",
-    "jose": "^6.2.17"
+    "jose": "^6.2.17",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@cloudflare/vitest-plugin": "^1.8.0",
     "@eslint/js": "^10.0.1",
+    "@modelcontextprotocol/client": "^2.4.0",
     "eslint": "^10.14.0",
     "globals": "^17.14.0",
     "typescript": "^6.0.3",

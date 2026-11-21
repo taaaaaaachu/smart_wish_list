@@ -98,6 +98,52 @@ pnpm run deploy             # wrangler deploy
 メールアドレス)にフォールバックする。`DEV_USER_EMAIL`も空なら全リクエストを401で拒否するので、
 Accessの設定を忘れても誰かになりすまされることはない。
 
+## エージェント接続(MCP)
+
+AIエージェントが MCP(Streamable HTTP、ステートレス、`https://<本番ドメイン>/mcp`)でリストを操作できる。
+attendance-manager-web と同じ方式で、SDKは `@modelcontextprotocol/server`(v2)の `createMcpHandler`、
+認可は自前のOAuth 2.1(状態はすべてD1)。Durable ObjectsもKVも使わない。
+
+- **OAuth 2.1に対応したエージェント**: `/mcp` のURLを登録するだけでよい。エージェントが `/mcp` の401から
+  認可サーバーを見つけ、クライアント登録(CIMDかDCR)→ブラウザで同意画面(`/oauth/authorize`、Accessでログイン)→
+  トークン発行まで自動で進む。
+- **OAuthに対応していないエージェント(Museなど)**: `/settings/mcp` で名前を付けてトークンを発行し、
+  `Authorization: Bearer <トークン>` として登録する(トークンは発行直後に一度だけ表示される)。
+- できるのはアイテムの一覧・追加・編集・削除・購入済み化と、予算での提案(`src/mcp.ts`)。操作先は接続を作ったユーザー本人のリスト。
+- トークン・認可コードはSHA-256のハッシュだけを保存する。OAuthのアクセストークンは1時間、リフレッシュトークンは
+  使うたびに入れ替え、古いものが再び使われたら接続ごと失効させる。90日使われない接続は失効し、期限切れの行はCron Trigger
+  (`wrangler.jsonc` の `triggers`)で毎日消す。誰でも呼べる `/oauth/register` はIPごとに回数を制限する。
+- **Accessのポリシーからユーザーを外しても、その人の接続は動き続ける**(`/mcp` はAccessを通らないため)。
+  管理者画面は無いので、外した人の接続は必要に応じてD1の `agent_connections` から消すこと。
+
+### Cloudflare Access の設定(本番で必須・ダッシュボードで行う)
+
+エージェントのサーバーはAccessを通れないため、次のパスだけを **Bypass** にする。
+**同意画面 `/oauth/authorize` とそれ以外のパス(`/`・`/settings/mcp` など)はBypassしないこと**
+(同意画面はAccessのJWTで「誰が許可したか」を決めている)。
+
+| パス | 用途 |
+|---|---|
+| `/mcp` | MCPエンドポイント(Bearerトークンで認証) |
+| `/oauth/token` | トークン発行・リフレッシュ |
+| `/oauth/register` | クライアント登録(DCR) |
+| `/oauth/revoke` | トークン取り消し |
+| `/.well-known/*` | 認可サーバー・保護リソースのメタデータ |
+
+手順(Zero Trust ダッシュボード):
+
+1. **Access > Applications > Add an application > Self-hosted** で新しいアプリを作る。
+2. 本番ドメインでパス `mcp` を指定する。続けて **Add public hostname** で同じドメインに `oauth/token`・
+   `oauth/register`・`oauth/revoke`・`.well-known/*` を追加する(5件)。
+3. ポリシーを1つ作り、**Action: Bypass**、**Include: Everyone** にする。
+4. 保存する。既存のアプリ(ドメイン全体を保護しているもの)は変更しない。パスを指定したアプリの方が
+   優先されるため、上の5パスだけがAccessの外に出る。
+5. 確かめる:
+   - `curl -i -X POST https://<本番ドメイン>/mcp` が401と `WWW-Authenticate: Bearer resource_metadata="..."` を返す
+     (Accessのログイン画面への302ではない)。
+   - ブラウザで `https://<本番ドメイン>/oauth/authorize` を開くとAccessのログインが求められる。
+   - `curl -i https://<本番ドメイン>/` がAccessのログインへの302を返す(Bypassになっていない)。
+
 ## ライセンス
 
 [MIT License](LICENSE)
