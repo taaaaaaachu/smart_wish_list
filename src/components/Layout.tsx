@@ -32,6 +32,7 @@ export const Layout: FC<PropsWithChildren<{ title: string }>> = ({
           <a href="/purchased">購入済み</a>
           <a href="/budget">予算で選ぶ</a>
           <a href="/items/new">追加</a>
+          <a href="/settings/mcp">MCP</a>
         </nav>
       </header>
       <main>{children}</main>
